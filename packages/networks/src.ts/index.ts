@@ -49,7 +49,7 @@ function ethDefaultProvider(network: string | Network): Renetworkable {
             // network does not handle the Berlin hardfork, which is
             // live on these ones.
             // @TODO: This goes away once Pocket has upgraded their nodes
-            const skip = [ "goerli", "ropsten", "rinkeby" ];
+            const skip = [ "goerli", "ropsten", "rinkeby", "sepolia" ];
             try {
                 const provider = new providers.PocketProvider(network, options.pocket);
                 if (provider.network && skip.indexOf(provider.network.name) === -1) {
@@ -166,6 +166,12 @@ const networks: { [name: string]: Network } = {
 
     kintsugi: { chainId: 1337702, name: "kintsugi" },
 
+    sepolia: {
+        chainId: 11155111,
+        name: "sepolia",
+        _defaultProvider: ethDefaultProvider("sepolia")
+    },
+
 
     // ETC (See: #351)
     classic: {
@@ -204,6 +210,7 @@ const networks: { [name: string]: Network } = {
 
     arbitrum: { chainId: 42161, name: "arbitrum" },
     "arbitrum-rinkeby": { chainId: 421611, name: "arbitrum-rinkeby" },
+    "arbitrum-goerli": { chainId: 421613, name: "arbitrum-goerli" },
 
     bnb: { chainId: 56, name: "bnb" },
     bnbt: { chainId: 97, name: "bnbt" },

@@ -45,7 +45,7 @@ function getResult(result: { status?: number, message?: string, result?: any }):
         return result.result;
     }
 
-    if (result.status != 1 || result.message != "OK") {
+    if (result.status != 1 || typeof(result.message) !== "string" || !result.message.match(/^OK/)) {
         const error: any = new Error("invalid response");
         error.result = JSON.stringify(result);
         if ((result.result || "").toLowerCase().indexOf("rate limit") >= 0) {
@@ -92,8 +92,6 @@ function checkLogTag(blockTag: string): number | "latest" {
     return parseInt(blockTag.substring(2), 16);
 }
 
-
-const defaultApiKey = "9D13ZE7XSBTJ94N9BNJ2MA33VMAY2YPIRB";
 
 function checkError(method: string, error: any, transaction: any): any {
     // Undo the "convenience" some nodes are attempting to prevent backwards
@@ -160,29 +158,35 @@ function checkError(method: string, error: any, transaction: any): any {
 
 export class EtherscanProvider extends BaseProvider{
     readonly baseUrl: string;
-    readonly apiKey: string;
+    readonly apiKey: string | null;
 
     constructor(network?: Networkish, apiKey?: string) {
         super(network);
 
         defineReadOnly(this, "baseUrl", this.getBaseUrl());
-        defineReadOnly(this, "apiKey", apiKey || defaultApiKey);
+        defineReadOnly(this, "apiKey", apiKey || null);
     }
 
     getBaseUrl(): string {
         switch(this.network ? this.network.name: "invalid") {
             case "homestead":
                 return "https:/\/api.etherscan.io";
-            case "ropsten":
-                return "https:/\/api-ropsten.etherscan.io";
-            case "rinkeby":
-                return "https:/\/api-rinkeby.etherscan.io";
-            case "kovan":
-                return "https:/\/api-kovan.etherscan.io";
             case "goerli":
                 return "https:/\/api-goerli.etherscan.io";
+            case "sepolia":
+                return "https:/\/api-sepolia.etherscan.io";
+            case "matic":
+                return "https:/\/api.polygonscan.com";
+            case "maticmum":
+                return "https:/\/api-testnet.polygonscan.com";
+            case "arbitrum":
+                return "https:/\/api.arbiscan.io";
+            case "arbitrum-goerli":
+                return "https:/\/api-goerli.arbiscan.io";
             case "optimism":
                 return "https:/\/api-optimistic.etherscan.io";
+            case "optimism-goerli":
+                return "https:/\/api-goerli-optimistic.etherscan.io";
             default:
         }
 
@@ -445,6 +449,6 @@ export class EtherscanProvider extends BaseProvider{
     }
 
     isCommunityResource(): boolean {
-        return (this.apiKey === defaultApiKey);
+        return (this.apiKey == null);
     }
 }

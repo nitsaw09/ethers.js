@@ -50,6 +50,7 @@ export type ConnectionInfo = {
     throttleCallback?: (attempt: number, url: string) => Promise<boolean>,
 
     skipFetchSetup?: boolean;
+    fetchOptions?: Record<string, string>;
     errorPassThrough?: boolean;
 
     timeout?: number,
@@ -80,6 +81,12 @@ export type FetchJsonResponse = {
 
 
 type Header = { key: string, value: string };
+
+function unpercent(value: string): Uint8Array {
+    return toUtf8Bytes(value.replace(/%([0-9a-f][0-9a-f])/gi, (all, code) => {
+        return String.fromCharCode(parseInt(code, 16));
+    }));
+}
 
 // This API is still a work in progress; the future changes will likely be:
 // - ConnectionInfo => FetchDataRequest<T = any>
@@ -158,16 +165,21 @@ export function _fetchData<T = Uint8Array>(connection: string | ConnectionInfo, 
         if (connection.skipFetchSetup != null) {
             options.skipFetchSetup = !!connection.skipFetchSetup;
         }
+
+        if (connection.fetchOptions != null) {
+            options.fetchOptions = shallowCopy(connection.fetchOptions);
+        }
     }
-    const reData = new RegExp("^data:([a-z0-9-]+/[a-z0-9-]+);base64,(.*)$", "i");
+
+    const reData = new RegExp("^data:([^;:]*)?(;base64)?,(.*)$", "i");
     const dataMatch = ((url) ? url.match(reData): null);
     if (dataMatch) {
         try {
             const response = {
                 statusCode: 200,
                 statusMessage: "OK",
-                headers: { "content-type": dataMatch[1] },
-                body: base64Decode(dataMatch[2])
+                headers: { "content-type": (dataMatch[1] || "text/plain")},
+                body: (dataMatch[2] ? base64Decode(dataMatch[3]): unpercent(dataMatch[3]))
             };
 
             let result: T = <T><unknown>response.body;
